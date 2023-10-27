@@ -1,0 +1,77 @@
+import java.util.concurrent.locks.ReentrantLock;
+
+class BusReservationSystem {
+    private int totalSeats;
+    private int availableSeats;
+    private ReentrantLock lock;
+
+    public BusReservationSystem(int totalSeats) {
+        this.totalSeats = totalSeats;
+        this.availableSeats = totalSeats;
+        this.lock = new ReentrantLock();
+    }
+
+    public void reserveSeat(int seatsToReserve) {
+        lock.lock();
+        try {
+            if (availableSeats >= seatsToReserve) {
+                availableSeats -= seatsToReserve;
+                System.out.println(seatsToReserve + " seat(s) reserved. Available seats: " + availableSeats);
+            } else {
+                System.out.println("Sorry, not enough seats available to reserve.");
+            }
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public void cancelSeat(int seatsToCancel) {
+        lock.lock();
+        try {
+            if (availableSeats + seatsToCancel <= totalSeats) {
+                availableSeats += seatsToCancel;
+                System.out.println(seatsToCancel + " seat(s) canceled. Available seats: " + availableSeats);
+            } else {
+                System.out.println("Invalid cancel request. Please check the number of seats to cancel.");
+            }
+        } finally {
+            lock.unlock();
+        }
+    }
+}
+
+class CustomerThread extends Thread {
+    private BusReservationSystem busReservationSystem;
+    private int seatsToReserve;
+    private int seatsToCancel;
+
+    public CustomerThread(BusReservationSystem busReservationSystem, int seatsToReserve, int seatsToCancel) {
+        this.busReservationSystem = busReservationSystem;
+        this.seatsToReserve = seatsToReserve;
+        this.seatsToCancel = seatsToCancel;
+    }
+
+    @Override
+    public void run() {
+        busReservationSystem.reserveSeat(seatsToReserve);
+        busReservationSystem.cancelSeat(seatsToCancel);
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        BusReservationSystem busReservationSystem = new BusReservationSystem(50); // Total seats in the bus
+
+        // Create multiple customer threads to reserve and cancel seats
+        CustomerThread[] customers = {
+            new CustomerThread(busReservationSystem, 3, 1),
+            new CustomerThread(busReservationSystem, 2, 2),
+            new CustomerThread(busReservationSystem, 5, 3)
+        };
+
+        // Start the customer threads
+        for (CustomerThread customer : customers) {
+            customer.start();
+        }
+    }
+}
