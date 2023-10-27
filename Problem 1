@@ -1,0 +1,58 @@
+class NumberPrinter {
+    private int n;
+    private boolean isOddTurn;
+
+    public NumberPrinter(int initial, boolean isOddTurn) {
+        this.n = initial;
+        this.isOddTurn = isOddTurn;
+    }
+
+    public synchronized void printOdd() {
+        while (n % 2 == 0 || !isOddTurn) {
+            try {
+                wait();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+        System.out.println("Odd Thread: " + n);
+        n++;
+        isOddTurn = !isOddTurn;
+        notify();
+    }
+
+    public synchronized void printEven() {
+        while (n % 2 != 0 || isOddTurn) {
+            try {
+                wait();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+        System.out.println("Even Thread: " + n);
+        n++;
+        isOddTurn = !isOddTurn;
+        notify();
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        NumberPrinter numberPrinter = new NumberPrinter(1, true);
+
+        Thread oddThread = new Thread(() -> {
+            while (numberPrinter.n <= 13) {
+                numberPrinter.printOdd();
+            }
+        });
+
+        Thread evenThread = new Thread(() -> {
+            while (numberPrinter.n <= 13) {
+                numberPrinter.printEven();
+            }
+        });
+
+        oddThread.start();
+        evenThread.start();
+    }
+}
